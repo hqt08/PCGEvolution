@@ -14,6 +14,7 @@ public class evolveSystem : MonoBehaviour {
 	public float crossoverPercentage = 0.5f;
 	public int elitism = 2;
 	public int selectionSize = 10;
+	public PhysicMaterial material;
 
 	private List<Genotype> population_genotypes;
 	private List<Creature> population;
@@ -23,6 +24,7 @@ public class evolveSystem : MonoBehaviour {
 	int creaturesTestedCount = 0;
 	bool testing = false;
 	float startTime, timing;
+	float tableRadius = 0.38f;
 
 	Vector3 default_angle = new Vector3(0,0,0);
 	Vector3 default_position = new Vector3(0.013f,0.12f,0.222f);
@@ -60,6 +62,7 @@ public class evolveSystem : MonoBehaviour {
 				} else { //Shape.Sphere
 					obj = sphere_prefab;
 				}
+				obj.GetComponent<MeshCollider>().material = material;
 
 				GameObject creature_instance = (GameObject) Instantiate (obj, g.getPosition(), Quaternion.identity);
 				startTime = Time.time;
@@ -104,9 +107,12 @@ public class evolveSystem : MonoBehaviour {
 			float mass = Random.Range(0f, 10f);
 			float size_x = Random.Range(1f, 5f); 
 			float size_y = Random.Range(1f, 5f); 
-			float size_z = Random.Range(1f, 5f); 
-			Vector3 size = new Vector3(size_x, size_y, size_z);
-			Genotype g = new Genotype(shapetype, mass, size, default_angle, default_position, default_force);
+			float size_z = Random.Range(0.1f, 2f); 
+			Vector3 size = new Vector3(size_x, size_x, size_z);
+			float pos_z = Random.Range(0f, tableRadius);
+			float pos_y = 0.12f;
+			Vector3 pos = new Vector3(0, pos_y, pos_z);
+			Genotype g = new Genotype(shapetype, mass, size, default_angle, pos, default_force);
 			population_genotypes.Add(g);
 		}
 	}
@@ -381,7 +387,10 @@ public class Genotype {
 			initial_angle = initial_angle;
 			break;
 		case(4) :
-			initial_position = initial_position;
+			float pos_z = Random.Range(0, 0.38f);
+			float pos_y = 0.12f;
+			Vector3 pos = new Vector3(0, pos_y, pos_z);
+			initial_position = pos;
 			break;
 		case(5) :
 			initial_force = initial_force;

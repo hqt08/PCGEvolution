@@ -68,6 +68,8 @@ public class evolveSystem : MonoBehaviour {
 				startTime = Time.time;
 				creature_instance.transform.localScale = g.size;
 				creature_instance.GetComponent<Rigidbody>().mass = g.mass;
+				creature_instance.GetComponentInChildren<Rigidbody>().AddTorque(g.initial_force);
+				creature_instance.transform.eulerAngles = g.initial_angle;
 				Creature c = new Creature(g, creature_instance);
 				creature_instance.name = c.name;
 				population.Add(c);
@@ -104,15 +106,24 @@ public class evolveSystem : MonoBehaviour {
 	void generateInitialPopulation() {
 		for (int i=0; i<populationSize; i++) {
 			Shape shapetype = (Shape) Random.Range(0,3);
+			//mass
 			float mass = Random.Range(0f, 10f);
+			//size
 			float size_x = Random.Range(1f, 5f); 
 			float size_y = Random.Range(1f, 5f); 
 			float size_z = Random.Range(0.1f, 2f); 
 			Vector3 size = new Vector3(size_x, size_x, size_z);
+			//position
 			float pos_z = Random.Range(0f, tableRadius);
 			float pos_y = 0.12f;
 			Vector3 pos = new Vector3(0, pos_y, pos_z);
-			Genotype g = new Genotype(shapetype, mass, size, default_angle, pos, default_force);
+			//torque
+			float force_z = Random.Range(-100f, 100f);
+			Vector3 force = new Vector3(0, 0, force_z);
+			//angle
+			float angle_y = Random.Range(-45, 45); 
+			Vector3 angle = new Vector3(0, angle_y, 0);
+			Genotype g = new Genotype(shapetype, mass, size, angle, pos, force);
 			population_genotypes.Add(g);
 		}
 	}
@@ -384,7 +395,8 @@ public class Genotype {
 			size = new Vector3(size_x, size_y, size_z);
 			break;
 		case(3) :
-			initial_angle = initial_angle;
+			float angle_y = Random.Range(initial_angle.y - 10, initial_angle.y + 10); 
+			initial_angle = new Vector3(0, angle_y, 0);
 			break;
 		case(4) :
 			float pos_z = Random.Range(0, 0.38f);
@@ -393,7 +405,8 @@ public class Genotype {
 			initial_position = pos;
 			break;
 		case(5) :
-			initial_force = initial_force;
+			float force_z = Random.Range(initial_force.z - 50f, initial_force.z + 50f); 
+			initial_force = new Vector3(0, 0, force_z);
 			break;
 		default:
 			break;

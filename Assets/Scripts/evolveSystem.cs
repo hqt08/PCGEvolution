@@ -55,18 +55,20 @@ public class evolveSystem : MonoBehaviour {
 				g.printGenotype();
 
 				GameObject obj;
+				float sizeRatio = 1f;
 				if (g.shape == Shape.Disc) {
 					obj = disc_prefab;
 				} else if (g.shape == Shape.Torus) {
 					obj = torus_prefab;
 				} else { //Shape.Sphere
 					obj = sphere_prefab;
+					sizeRatio = 0.02f;
 				}
 				obj.GetComponent<MeshCollider>().material = material;
 
 				GameObject creature_instance = (GameObject) Instantiate (obj, g.getPosition(), Quaternion.identity);
 				startTime = Time.time;
-				creature_instance.transform.localScale = g.size;
+				creature_instance.transform.localScale = g.size * sizeRatio;
 				creature_instance.GetComponent<Rigidbody>().mass = g.mass;
 				creature_instance.GetComponentInChildren<Rigidbody>().AddTorque(g.initial_force);
 				creature_instance.transform.eulerAngles = g.initial_angle;
@@ -107,11 +109,11 @@ public class evolveSystem : MonoBehaviour {
 		for (int i=0; i<populationSize; i++) {
 			Shape shapetype = (Shape) Random.Range(0,3);
 			//mass
-			float mass = Random.Range(0f, 10f);
+			float mass = Random.Range(1f, 10f);
 			//size
-			float size_x = Random.Range(1f, 5f); 
-			float size_y = Random.Range(1f, 5f); 
-			float size_z = Random.Range(0.1f, 2f); 
+			float size_x = Random.Range(2f, 6f); 
+			float size_y = Random.Range(2f, 6f); 
+			float size_z = Random.Range(0.5f, 2f); 
 			Vector3 size = new Vector3(size_x, size_x, size_z);
 			//position
 			float pos_z = Random.Range(0f, tableRadius);
@@ -121,7 +123,7 @@ public class evolveSystem : MonoBehaviour {
 			float force_z = Random.Range(-100f, 100f);
 			Vector3 force = new Vector3(0, 0, force_z);
 			//angle
-			float angle_y = Random.Range(-45, 45); 
+			float angle_y = Random.Range(-20, 20); 
 			Vector3 angle = new Vector3(0, angle_y, 0);
 			Genotype g = new Genotype(shapetype, mass, size, angle, pos, force);
 			population_genotypes.Add(g);

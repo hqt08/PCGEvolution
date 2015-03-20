@@ -3,6 +3,7 @@ using UnityEngine.UI;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.IO;
 
 /*
  * Evolution System
@@ -10,7 +11,7 @@ using System.Linq;
 public class evolveSystem : MonoBehaviour {
 	public int noOfGenerations = 10;
 	public int populationSize = 20;
-	public float mutationPercentage = 0.5f;
+	public float mutationPercentage = 0.3f;
 	public float crossoverPercentage = 0.5f;
 	public int elitism = 2;
 	public int selectionSize = 10;
@@ -36,8 +37,17 @@ public class evolveSystem : MonoBehaviour {
 	Text scoreboard;
 	Text avefitness;
 
+	public bool saveToFile = false;
+	public string path = "Assets/results.csv";
+
 	// Use this for initialization
 	void Start () {
+		if (saveToFile) {
+			if (File.Exists(path)) {
+				File.Delete(path);
+			}
+		}
+
 		scoreboard = GameObject.Find("ScoreText").GetComponent<Text>();
 		avefitness = GameObject.Find("TotalText").GetComponent<Text>();
 		population_genotypes = new List<Genotype>();
@@ -80,11 +90,19 @@ public class evolveSystem : MonoBehaviour {
 				StartCoroutine(testCreature(c));
 			} else { // Continue to test current creature
 				Creature currentCreature = population.Last();
+				//currentCreature.obj.GetComponentInChildren<Rigidbody>().AddTorque(currentCreature.genotype.initial_force);
 				StartCoroutine(testCreature(currentCreature));
 			}
 		} else {
 			// Find average fitness
 			avefitness.text += "\n" + "Generation " + generation.ToString() + " : " + AverageFitness().ToString();
+			// Save to file
+			if (saveToFile) { //write waypoints to file
+				using (StreamWriter file = new StreamWriter(path, true))
+				{
+					file.WriteLine(generation.ToString()+","+AverageFitness().ToString());
+				}
+			}
 
 			// Reset population
 			population_genotypes = new List<Genotype>();
@@ -113,18 +131,18 @@ public class evolveSystem : MonoBehaviour {
 			//size
 			float size_x = Random.Range(2f, 6f); 
 			float size_y = Random.Range(2f, 6f); 
-			float size_z = Random.Range(0.5f, 2f); 
+			float size_z = Random.Range(0.5f, 3f); 
 			Vector3 size = new Vector3(size_x, size_x, size_z);
 			//position
 			float pos_z = Random.Range(0f, tableRadius);
-			float pos_y = 0.12f;
+			float pos_y = 0.05f;
 			Vector3 pos = new Vector3(0, pos_y, pos_z);
 			//torque
-			float force_z = Random.Range(-100f, 100f);
+			float force_z = Random.Range(0f, 1000f);
 			Vector3 force = new Vector3(0, 0, force_z);
 			//angle
-			float angle_y = Random.Range(-20, 20); 
-			Vector3 angle = new Vector3(0, angle_y, 0);
+			float angle_x = Random.Range(-20, 20); 
+			Vector3 angle = new Vector3(angle_x, 0, 0);
 			Genotype g = new Genotype(shapetype, mass, size, angle, pos, force);
 			population_genotypes.Add(g);
 		}
@@ -397,8 +415,8 @@ public class Genotype {
 			size = new Vector3(size_x, size_y, size_z);
 			break;
 		case(3) :
-			float angle_y = Random.Range(initial_angle.y - 10, initial_angle.y + 10); 
-			initial_angle = new Vector3(0, angle_y, 0);
+			float angle_x = Random.Range(initial_angle.y - 10, initial_angle.y + 10); 
+			initial_angle = new Vector3(angle_x, 0, 0);
 			break;
 		case(4) :
 			float pos_z = Random.Range(0, 0.38f);

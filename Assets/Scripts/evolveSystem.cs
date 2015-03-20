@@ -37,8 +37,13 @@ public class evolveSystem : MonoBehaviour {
 	Text scoreboard;
 	Text avefitness;
 
+	// Save to File params
 	public bool saveToFile = false;
 	public string path = "Assets/results.csv";
+
+	// Battlemode params
+	public bool battleMode = true;
+	Creature victorCreature;
 
 	// Use this for initialization
 	void Start () {
@@ -61,37 +66,216 @@ public class evolveSystem : MonoBehaviour {
 		if (creaturesTestedCount < populationSize) {
 			// Continue testing in current generation
 			if (!testing) { // New creature to test
-				Genotype g = population_genotypes[creaturesTestedCount];
-				g.printGenotype();
+				if (!battleMode) {
+					Genotype g = population_genotypes[creaturesTestedCount];
+					g.printGenotype();
 
-				GameObject obj;
-				float sizeRatio = 1f;
-				if (g.shape == Shape.Disc) {
-					obj = disc_prefab;
-				} else if (g.shape == Shape.Torus) {
-					obj = torus_prefab;
-				} else { //Shape.Sphere
-					obj = sphere_prefab;
-					sizeRatio = 0.02f;
+					GameObject obj;
+					float sizeRatio = 1f;
+					if (g.shape == Shape.Disc) {
+						obj = disc_prefab;
+					} else if (g.shape == Shape.Torus) {
+						obj = torus_prefab;
+					} else { //Shape.Sphere
+						obj = sphere_prefab;
+						sizeRatio = 0.02f;
+					}
+					obj.GetComponent<MeshCollider>().material = material;
+
+					GameObject creature_instance = (GameObject) Instantiate (obj, g.getPosition(), Quaternion.identity);
+					startTime = Time.time;
+					creature_instance.transform.localScale = g.size * sizeRatio;
+					creature_instance.GetComponent<Rigidbody>().mass = g.mass;
+					creature_instance.GetComponentInChildren<Rigidbody>().AddTorque(g.initial_force);
+					creature_instance.transform.eulerAngles = g.initial_angle;
+					Creature c = new Creature(g, creature_instance);
+					creature_instance.name = c.name;
+					population.Add(c);
+
+					testing = true;
+					StartCoroutine(testCreature(c));
 				}
-				obj.GetComponent<MeshCollider>().material = material;
 
-				GameObject creature_instance = (GameObject) Instantiate (obj, g.getPosition(), Quaternion.identity);
-				startTime = Time.time;
-				creature_instance.transform.localScale = g.size * sizeRatio;
-				creature_instance.GetComponent<Rigidbody>().mass = g.mass;
-				creature_instance.GetComponentInChildren<Rigidbody>().AddTorque(g.initial_force);
-				creature_instance.transform.eulerAngles = g.initial_angle;
-				Creature c = new Creature(g, creature_instance);
-				creature_instance.name = c.name;
-				population.Add(c);
+				if (battleMode) { //initialize 2 creatures each time for battlemode
+					if (creaturesTestedCount == 0) {//starting setup
+						Genotype g = population_genotypes[creaturesTestedCount];
+						Genotype g2 = population_genotypes[creaturesTestedCount+1];
 
-				testing = true;
-				StartCoroutine(testCreature(c));
+						// Setup 1st creature
+						GameObject obj;
+						float sizeRatio = 1f;
+						if (g.shape == Shape.Disc) {
+							obj = disc_prefab;
+						} else if (g.shape == Shape.Torus) {
+							obj = torus_prefab;
+						} else { //Shape.Sphere
+							obj = sphere_prefab;
+							sizeRatio = 0.02f;
+						}
+						obj.GetComponent<MeshCollider>().material = material;
+
+						GameObject creature_instance = (GameObject) Instantiate (obj, g.getPosition(), Quaternion.identity);
+						startTime = Time.time;
+						creature_instance.transform.localScale = g.size * sizeRatio;
+						creature_instance.GetComponent<Rigidbody>().mass = g.mass;
+						creature_instance.GetComponentInChildren<Rigidbody>().AddTorque(g.initial_force);
+						creature_instance.transform.eulerAngles = g.initial_angle;
+						Creature c = new Creature(g, creature_instance);
+						creature_instance.name = c.name;
+						population.Add(c);
+
+						// Setup 2nd creature
+						GameObject obj2;
+						sizeRatio = 1f;
+						if (g2.shape == Shape.Disc) {
+							obj2 = disc_prefab;
+						} else if (g2.shape == Shape.Torus) {
+							obj2 = torus_prefab;
+						} else { //Shape.Sphere
+							obj2 = sphere_prefab;
+							sizeRatio = 0.02f;
+						}
+						obj2.GetComponent<MeshCollider>().material = material;
+	
+						Vector3 position = g2.getPosition();
+						Vector3 oppositePosition = new Vector3(position.x, position.y, -position.z); 
+						GameObject creature_instance2 = (GameObject) Instantiate (obj2, oppositePosition, Quaternion.identity);
+						startTime = Time.time;
+						creature_instance2.transform.localScale = g2.size * sizeRatio;
+						creature_instance2.GetComponent<Rigidbody>().mass = g2.mass;
+						creature_instance2.GetComponentInChildren<Rigidbody>().AddTorque(g2.initial_force);
+						creature_instance2.transform.eulerAngles = g2.initial_angle;
+						Creature c2 = new Creature(g2, creature_instance2);
+						creature_instance2.name = c2.name;
+						population.Add(c2);
+						
+						testing = true;
+						StartCoroutine(testCreatures(c, c2));
+
+					} else if (creaturesTestedCount < populationSize - 1) {
+						//Find new opponent
+						Genotype g = population_genotypes[creaturesTestedCount+1];
+						g.printGenotype();
+						
+						GameObject obj;
+						float sizeRatio = 1f;
+						if (g.shape == Shape.Disc) {
+							obj = disc_prefab;
+						} else if (g.shape == Shape.Torus) {
+							obj = torus_prefab;
+						} else { //Shape.Sphere
+							obj = sphere_prefab;
+							sizeRatio = 0.02f;
+						}
+						obj.GetComponent<MeshCollider>().material = material;
+
+						GameObject creature_instance = (GameObject) Instantiate (obj, g.getPosition(), Quaternion.identity);
+						startTime = Time.time;
+						creature_instance.transform.localScale = g.size * sizeRatio;
+						creature_instance.GetComponent<Rigidbody>().mass = g.mass;
+						creature_instance.GetComponentInChildren<Rigidbody>().AddTorque(g.initial_force);
+						creature_instance.transform.eulerAngles = g.initial_angle;
+						Creature c = new Creature(g, creature_instance);
+						creature_instance.name = c.name;
+						population.Add(c);
+
+						// Battle against victor creature of previous round
+						GameObject obj2;
+						sizeRatio = 1f;
+						if (victorCreature.genotype.shape == Shape.Disc) {
+							obj2 = disc_prefab;
+						} else if (victorCreature.genotype.shape == Shape.Torus) {
+							obj2 = torus_prefab;
+						} else { //Shape.Sphere
+							obj2 = sphere_prefab;
+							sizeRatio = 0.02f;
+						}
+						obj2.GetComponent<MeshCollider>().material = material;
+
+						Vector3 position = victorCreature.genotype.getPosition();
+						Vector3 oppositePosition = new Vector3(position.x, position.y, -position.z); 
+						GameObject creature_instance2 = (GameObject) Instantiate (obj2, oppositePosition, Quaternion.identity);
+						startTime = Time.time;
+						creature_instance2.transform.localScale =  victorCreature.genotype.size * sizeRatio;
+						creature_instance2.GetComponent<Rigidbody>().mass = victorCreature.genotype.mass;
+						creature_instance2.GetComponentInChildren<Rigidbody>().AddTorque(victorCreature.genotype.initial_force);
+						creature_instance2.transform.eulerAngles =  victorCreature.genotype.initial_angle;
+						creature_instance2.name =  victorCreature.name;
+						victorCreature.obj = creature_instance2;
+
+						testing = true;
+						StartCoroutine(testCreatures(victorCreature, c));
+					} else { //last standing victor creature is pit against itself (so fun!)
+						Genotype g = population_genotypes[creaturesTestedCount];
+						
+						GameObject obj;
+						float sizeRatio = 1f;
+						if (g.shape == Shape.Disc) {
+							obj = disc_prefab;
+						} else if (g.shape == Shape.Torus) {
+							obj = torus_prefab;
+						} else { //Shape.Sphere
+							obj = sphere_prefab;
+							sizeRatio = 0.02f;
+						}
+						obj.GetComponent<MeshCollider>().material = material;
+						
+						GameObject creature_instance = (GameObject) Instantiate (obj, g.getPosition(), Quaternion.identity);
+						startTime = Time.time;
+						creature_instance.transform.localScale = g.size * sizeRatio;
+						creature_instance.GetComponent<Rigidbody>().mass = g.mass;
+						creature_instance.GetComponentInChildren<Rigidbody>().AddTorque(g.initial_force);
+						creature_instance.transform.eulerAngles = g.initial_angle;
+						Creature c = new Creature(g, creature_instance);
+						creature_instance.name = c.name;
+						population.Add(c);
+
+						// Battle against victor creature
+						GameObject obj2;
+						sizeRatio = 1f;
+						if (victorCreature.genotype.shape == Shape.Disc) {
+							obj2 = disc_prefab;
+						} else if (victorCreature.genotype.shape == Shape.Torus) {
+							obj2 = torus_prefab;
+						} else { //Shape.Sphere
+							obj2 = sphere_prefab;
+							sizeRatio = 0.02f;
+						}
+						obj2.GetComponent<MeshCollider>().material = material;
+
+						Vector3 position = victorCreature.genotype.getPosition();
+						Vector3 oppositePosition = new Vector3(position.x, position.y, -position.z); 
+						GameObject creature_instance2 = (GameObject) Instantiate (obj2, oppositePosition, Quaternion.identity);
+						startTime = Time.time;
+						creature_instance2.transform.localScale =  victorCreature.genotype.size * sizeRatio;
+						creature_instance2.GetComponent<Rigidbody>().mass = victorCreature.genotype.mass;
+						creature_instance2.GetComponentInChildren<Rigidbody>().AddTorque(victorCreature.genotype.initial_force);
+						creature_instance2.transform.eulerAngles =  victorCreature.genotype.initial_angle;
+						creature_instance2.name =  victorCreature.name;
+						victorCreature.obj = creature_instance2;
+
+						testing = true;
+						StartCoroutine(testCreatures(victorCreature, c));
+					}
+
+				}
+
 			} else { // Continue to test current creature
-				Creature currentCreature = population.Last();
-				//currentCreature.obj.GetComponentInChildren<Rigidbody>().AddTorque(currentCreature.genotype.initial_force);
-				StartCoroutine(testCreature(currentCreature));
+				if (!battleMode) {
+					Creature currentCreature = population.Last();
+					//currentCreature.obj.GetComponentInChildren<Rigidbody>().AddTorque(currentCreature.genotype.initial_force);
+					StartCoroutine(testCreature(currentCreature));
+				} else {
+					if (creaturesTestedCount == 0) {
+						Creature currentCreature1 = population[0];
+						Creature currentCreature2 = population[1];
+						StartCoroutine(testCreatures(currentCreature1,currentCreature2));
+					} else {
+						Creature currentCreature1 = victorCreature;
+						Creature currentCreature2 = population.Last();
+						StartCoroutine(testCreatures(currentCreature1,currentCreature2));
+					}
+				}
 			}
 		} else {
 			// Find average fitness
@@ -151,7 +335,7 @@ public class evolveSystem : MonoBehaviour {
 	IEnumerator testCreature(Creature c) {
 		//check if creatures that have fallen off table
 		if (c.obj.GetComponent<Rigidbody>().velocity.y > -2f) {
-			//Debug.Log(c.obj.rigidbody.velocity.y.ToString());
+			//still OK
 		} else {
 			//Debug.Log("Should reset");
 			timing = Time.time - startTime;
@@ -161,6 +345,42 @@ public class evolveSystem : MonoBehaviour {
 			GameObject.Destroy(c.obj);
 			testing = false;
 
+			// Record creature's timing to dict
+			fitnessMap.Add(timing, c);
+			scoreboard.text += "\n" + c.name + " : " + timing.ToString();
+		}
+		yield return null;
+	}
+
+	IEnumerator testCreatures(Creature c1, Creature c2) {
+		//check if creatures that have fallen off table
+		if (c1.obj.GetComponent<Rigidbody>().velocity.y > -2f && c2.obj.GetComponent<Rigidbody>().velocity.y > -2f) {
+			//Both still OK
+		} else {
+			Creature c;
+			if (c1.obj.GetComponent<Rigidbody>().velocity.y <= -2f) { //Find out who lost
+				//c1 loast
+				c = c1;
+				//Record the victor
+				victorCreature = c2;
+			} else {
+				//c2 lost
+				c = c2;
+				//Record the victor
+				victorCreature = c1;
+			}
+
+			//Find time for Creature who lost
+			timing = Time.time - startTime;
+			creaturesTestedCount++;
+
+			//Clean up
+			c1.obj.SetActive(false);
+			GameObject.Destroy(c1.obj);
+			c2.obj.SetActive(false);
+			GameObject.Destroy(c2.obj);
+			testing = false;
+			
 			// Record creature's timing to dict
 			fitnessMap.Add(timing, c);
 			scoreboard.text += "\n" + c.name + " : " + timing.ToString();
